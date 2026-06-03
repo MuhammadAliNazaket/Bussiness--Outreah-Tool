@@ -26,4 +26,11 @@ router.delete("/clear", async (req, res) => {
     }
 });
 
+router.get("/health", (req, res) => {
+    res.json({
+        ok: true,
+        message: "Places route working"
+    });
+});
+
 module.exports = router;
