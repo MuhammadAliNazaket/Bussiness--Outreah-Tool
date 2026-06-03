@@ -8,6 +8,7 @@ router.get("/scrape", puppeteerController.scrapePlaces);
 router.delete("/clear", async (req, res) => {
     try {
         const [result] = await db.promise().query("DELETE FROM businesses");
+
         res.json({
             message: "All business data deleted",
             deletedRows: Number(result?.affectedRows || 0)
