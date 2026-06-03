@@ -11,14 +11,14 @@ app.use(express.json({ limit: "1mb" }));
 
 app.use("/api/places", require("./routes/places"));
 app.use("/api/lighthouse", require("./routes/lighthouse"));
-app.use(require('express').static('public'));
+app.use(require("express").static("public"));
 
-// Prevent hanging requests when Lighthouse/Chrome runs long.
-// Keep this >= your Lighthouse timeout.
 const serverTimeoutMs = Number(process.env.SERVER_TIMEOUT_MS || 120000);
 
-const server = app.listen(5000, () => {
-    console.log("Server running on port 5000");
+const PORT = process.env.PORT || 5000;
+
+const server = app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 
     const runCleanup = async () => {
         try {
