@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Business Outreach Tool</title>
+
+<style>
+*{box-sizing:border-box;font-family:Segoe UI,Arial}
+body{margin:0;background:#0f172a;color:#111}
+.hero{text-align:center;color:white;padding:45px 20px}
+.hero h1{font-size:42px;margin:0}
+.hero p{color:#cbd5e1}
+.panel{max-width:1000px;margin:auto;background:white;padding:25px;border-radius:20px;box-shadow:0 20px 40px #0005}
+input,textarea,select{width:100%;padding:14px;margin:8px 0;border-radius:12px;border:1px solid #ddd;font-size:15px}
+button{padding:12px 18px;border:0;border-radius:10px;background:#2563eb;color:white;font-weight:bold;cursor:pointer;margin:5px 3px}
+button:disabled{background:#999;cursor:not-allowed}
+.container{max-width:1200px;margin:25px auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:20px;padding:0 20px}
+.card{background:white;padding:20px;border-radius:18px;box-shadow:0 10px 25px #0004}
+.card h3{margin-top:0;color:#0f172a}
+.badge{display:inline-block;background:#fef3c7;color:#92400e;padding:6px 10px;border-radius:999px;font-weight:bold}
+.info{color:#475569;font-size:14px;line-height:1.6}
+.ok{color:#16a34a;font-weight:bold}
+.missing{color:#dc2626;font-weight:bold}
+a{color:#2563eb;font-weight:bold;text-decoration:none}
+.loading{text-align:center;color:white;font-size:18px;margin:20px}
+.small{font-size:13px;color:#64748b}
+</style>
+</head>
+
+<body>
+
+<div class="hero">
+<h1>Business Outreach Tool</h1>
+<p>Find businesses, check website/social presence, and prepare WhatsApp outreach safely.</p>
+</div>
+
+<div class="panel">
+<input id="search" placeholder="Example: restaurants in Islamabad">
+<input id="limit" type="number" min="1" max="60" value="30" placeholder="Max results (1-60)">
+
+<select id="filter">
+<option value="all">All Businesses</option>
+<option value="noWebsite">No Website</option>
+<option value="hasWebsite">Website Available</option>
+<option value="noSocial">No Social Media</option>
+<option value="hasSocial">Social Media Available</option>
+<option value="whatsapp">WhatsApp / Phone Available</option>
+</select>
+
+<textarea id="messageBox" rows="4" placeholder="Write your WhatsApp message here..."></textarea>
+
+<button onclick="searchPlaces()">Search Businesses</button>
+<button onclick="startOutreach()">Open WhatsApp Queue</button>
+
+<p class="small">Limit: 10 WhatsApp opens per hour. You must manually press Send in WhatsApp.</p>
+</div>
+
+<div id="loading" class="loading"></div>
+<div id="results" class="container"></div>
+
+<script>
+let allBusinesses = [];
+let filteredBusinesses = [];
+
+let openedCount = Number(localStorage.getItem("openedCount")) || 0;
+let resetTime = Number(localStorage.getItem("resetTime")) || Date.now() + 3600000;
+
+function checkLimitReset() {
+    if (Date.now() > resetTime) {
+        openedCount = 0;
+        resetTime = Date.now() + 3600000;
+        localStorage.setItem("openedCount", openedCount);
+        localStorage.setItem("resetTime", resetTime);
+    }
+}
+
+function hasWhatsAppNumber(phone) {
+    return phone && phone.replace(/\D/g, "").length >= 10;
+}
+
+function hasSocial(b) {
+    return Boolean(b.facebook || b.instagram || b.whatsapp);
+}
+
+async function searchPlaces() {
+    const query = document.getElementById("search").value.trim();
+    const limitInput = document.getElementById("limit");
+    const limit = Math.max(1, Math.min(60, Number(limitInput.value) || 30));
+    const loading = document.getElementById("loading");
+    const results = document.getElementById("results");
+
+    if (!query) {
+        alert("Please enter search text.");
+        return;
+    }
+
+    results.innerHTML = "";
+    limitInput.value = limit;
+    loading.innerHTML = `Searching up to ${limit} businesses... please wait.`;
+
+    try {
+        const res = await fetch(`http://localhost:5000/api/places/scrape?search=${encodeURIComponent(query)}&limit=${encodeURIComponent(limit)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.message || data.error || "Error fetching data.");
+        }
+
+        allBusinesses = data.data || [];
+        loading.innerHTML = `Showing ${allBusinesses.length} result(s).`;
+        applyFilter();
+
+    } catch (err) {
+        loading.innerHTML = "";
+        alert(err.message || "Error fetching data.");
+        console.log(err);
+    }
+}
+
+document.getElementById("filter").addEventListener("change", applyFilter);
+
+function applyFilter() {
+    const filter = document.getElementById("filter").value;
+
+    if (filter === "all") {
+        filteredBusinesses = allBusinesses;
+    }
+
+    if (filter === "noWebsite") {
+        filteredBusinesses = allBusinesses.filter(b => !b.website);
+    }
+
+    if (filter === "hasWebsite") {
+        filteredBusinesses = allBusinesses.filter(b => b.website);
+    }
+
+    if (filter === "noSocial") {
+        filteredBusinesses = allBusinesses.filter(b => !hasSocial(b));
+    }
+
+    if (filter === "hasSocial") {
+        filteredBusinesses = allBusinesses.filter(b => hasSocial(b));
+    }
+
+    if (filter === "whatsapp") {
+        filteredBusinesses = allBusinesses.filter(b => hasWhatsAppNumber(b.phone) || b.whatsapp);
+    }
+
+    render(filteredBusinesses);
+}
+
+function render(list) {
+    const box = document.getElementById("results");
+    box.innerHTML = "";
+
+    if (!list.length) {
+        box.innerHTML = `<p class="loading">No businesses found in this category.</p>`;
+        return;
+    }
+
+    list.forEach(b => {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+            <h3>${b.name || "Unknown Business"}</h3>
+
+            <span class="badge">⭐ ${b.rating || "N/A"}</span>
+
+            <p class="info"><strong>📍 Address:</strong><br>${b.address || "Address not available"}</p>
+
+            <p class="info"><strong>📞 Phone / WhatsApp:</strong>
+                ${
+                    hasWhatsAppNumber(b.phone)
+                    ? `<span class="ok">${b.phone}</span>`
+                    : `<span class="missing">Phone not available</span>`
+                }
+            </p>
+
+            <p>
+                🌐 ${
+                    b.website
+                    ? `<a href="${b.website}" target="_blank">Website Available</a>`
+                    : `<span class="missing">Website not available</span>`
+                }
+            </p>
+
+            <p>
+                📘 ${
+                    b.facebook
+                    ? `<a href="${b.facebook}" target="_blank">Facebook</a>`
+                    : `<span class="missing">Facebook not available</span>`
+                }
+            </p>
+
+            <p>
+                📸 ${
+                    b.instagram
+                    ? `<a href="${b.instagram}" target="_blank">Instagram</a>`
+                    : `<span class="missing">Instagram not available</span>`
+                }
+            </p>
+
+            <p>
+                💬 ${
+                    b.whatsapp
+                    ? `<a href="${b.whatsapp}" target="_blank">WhatsApp Link</a>`
+                    : `<span class="missing">WhatsApp link not available</span>`
+                }
+            </p>
+
+            ${
+                hasWhatsAppNumber(b.phone)
+                ? `<button onclick="openWhatsApp('${b.phone}')">Open WhatsApp Message</button>`
+                : `<button disabled>No WhatsApp Number</button>`
+            }
+        `;
+
+        box.appendChild(card);
+    });
+}
+
+function normalizePakistanPhone(phone) {
+    let cleanPhone = phone.replace(/\D/g, "");
+
+    if (cleanPhone.startsWith("0")) {
+        cleanPhone = "92" + cleanPhone.substring(1);
+    }
+
+    if (!cleanPhone.startsWith("92") && cleanPhone.length === 10) {
+        cleanPhone = "92" + cleanPhone;
+    }
+
+    return cleanPhone;
+}
+
+function openWhatsApp(phone) {
+    checkLimitReset();
+
+    if (openedCount >= 10) {
+        alert("Hourly limit reached. Try again later.");
+        return;
+    }
+
+    const message = document.getElementById("messageBox").value.trim();
+
+    if (!message) {
+        alert("Write your message first.");
+        return;
+    }
+
+    const cleanPhone = normalizePakistanPhone(phone);
+
+    openedCount++;
+    localStorage.setItem("openedCount", openedCount);
+    localStorage.setItem("resetTime", resetTime);
+
+    const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, "_blank");
+}
+
+function startOutreach() {
+    checkLimitReset();
+
+    const message = document.getElementById("messageBox").value.trim();
+
+    if (!message) {
+        alert("Write your message first.");
+        return;
+    }
+
+    const contacts = filteredBusinesses.filter(b => hasWhatsAppNumber(b.phone));
+
+    if (!contacts.length) {
+        alert("No WhatsApp/phone numbers available in selected category.");
+        return;
+    }
+
+    alert("WhatsApp will open one by one. You must manually click Send.");
+
+    let index = 0;
+
+    const interval = setInterval(() => {
+        checkLimitReset();
+
+        if (openedCount >= 10 || index >= contacts.length) {
+            clearInterval(interval);
+            alert("Queue stopped.");
+            return;
+        }
+
+        openWhatsApp(contacts[index].phone);
+        index++;
+
+    }, 15000);
+}
+</script>
+
+</body>
+</html>
