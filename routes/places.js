@@ -3,6 +3,13 @@ const router = express.Router();
 const puppeteerController = require("../controllers/puppeteerController");
 const db = require("../db");
 
+router.get("/health", (req, res) => {
+    res.json({
+        ok: true,
+        message: "Places route working"
+    });
+});
+
 router.get("/scrape", puppeteerController.scrapePlaces);
 
 router.delete("/clear", async (req, res) => {

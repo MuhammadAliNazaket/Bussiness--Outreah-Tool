@@ -186,16 +186,20 @@ async function extractMapsPlace(browser, url) {
 }
 
 async function scrapeMapsHeadless(search, maxResults) {
- const browser = await puppeteer.launch({
-    headless: "new",
-    defaultViewport: null,
-    args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu"
-    ]
-});
+    console.log("Launching Puppeteer with Railway-safe no-sandbox args");
+
+    const browser = await puppeteer.launch({
+        headless: "new",
+        defaultViewport: null,
+        args: [
+            "--no-sandbox",
+            "--disable-setuid-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--single-process",
+            "--no-zygote"
+        ]
+    });
     try {
         const searchPage = await browser.newPage();
         const urls = await collectMapsPlaceUrls(searchPage, search, maxResults);

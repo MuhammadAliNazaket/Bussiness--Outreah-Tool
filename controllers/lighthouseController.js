@@ -7,7 +7,6 @@ const DEFAULT_ANALYSIS_TIMEOUT_MS = Number(process.env.LIGHTHOUSE_TIMEOUT_MS || 
 const CHROME_KILL_TIMEOUT_MS = Number(process.env.LIGHTHOUSE_CHROME_KILL_TIMEOUT_MS || 8000);
 const MAX_CONCURRENT = Math.max(1, Number(process.env.LIGHTHOUSE_MAX_CONCURRENT || 2));
 const ALLOW_PRIVATE_HOSTS = String(process.env.LIGHTHOUSE_ALLOW_PRIVATE_HOSTS || "").toLowerCase() === "true";
-const NO_SANDBOX = String(process.env.LIGHTHOUSE_NO_SANDBOX || "").toLowerCase() === "true";
 
 let activeRuns = 0;
 
@@ -151,10 +150,14 @@ exports.analyze = async (req, res) => {
 
     const chromeFlags = [
       "--headless=new",
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--single-process",
+      "--no-zygote",
       "--no-first-run",
       "--no-default-browser-check",
-      "--disable-gpu",
-      "--disable-dev-shm-usage",
       "--disable-extensions",
       "--disable-background-networking",
       "--disable-background-timer-throttling",
@@ -169,10 +172,6 @@ exports.analyze = async (req, res) => {
       "--metrics-recording-only",
       "--mute-audio",
     ];
-
-    if (NO_SANDBOX) {
-      chromeFlags.push("--no-sandbox", "--disable-setuid-sandbox");
-    }
 
     const launchOpts = {
       chromeFlags,
