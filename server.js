@@ -1,4 +1,5 @@
 require("dotenv").config();
+console.log("Environment loaded");
 
 const express = require("express");
 const cors = require("cors");
@@ -10,7 +11,6 @@ app.use(cors());
 app.use(express.json({ limit: "1mb" }));
 
 app.use("/api/places", require("./routes/places"));
-app.use("/api/lighthouse", require("./routes/lighthouse"));
 app.use(require("express").static("public"));
 
 const serverTimeoutMs = Number(process.env.SERVER_TIMEOUT_MS || 120000);

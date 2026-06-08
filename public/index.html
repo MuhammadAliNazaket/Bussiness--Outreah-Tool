@@ -98,7 +98,7 @@ async function searchPlaces() {
     loading.innerHTML = `Searching up to ${limit} businesses... please wait.`;
 
     try {
-    const res = await fetch(`/api/places/scrape?search=${encodeURIComponent(query)}`);     
+    const res = await fetch(`/api/places/scrape?search=${encodeURIComponent(query)}&limit=${limit}`);
     const data = await res.json();
         if (!res.ok) {
             throw new Error(data.message || data.error || "Error fetching data.");

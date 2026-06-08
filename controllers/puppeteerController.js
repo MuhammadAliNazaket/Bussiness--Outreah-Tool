@@ -190,7 +190,6 @@ async function scrapeMapsHeadless(search, maxResults) {
 
     const browser = await puppeteer.launch({
         headless: "new",
-        defaultViewport: null,
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
@@ -255,8 +254,8 @@ async function saveBusinesses(results) {
 
     const sql = `
         INSERT INTO businesses
-        (name, address, rating, website, phone, facebook, instagram, whatsapp)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (name, address, rating, status, website, phone, facebook, instagram, whatsapp)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await Promise.all(
@@ -265,6 +264,7 @@ async function saveBusinesses(results) {
                 place.name,
                 place.address,
                 place.rating,
+                place.status,
                 place.website,
                 place.phone,
                 place.facebook,
