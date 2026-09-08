@@ -1,28 +1,51 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Business Outreach Tool</title>
 
 <style>
-*{box-sizing:border-box;font-family:Segoe UI,Arial}
-body{margin:0;background:#0f172a;color:#111}
-.hero{text-align:center;color:white;padding:45px 20px}
-.hero h1{font-size:42px;margin:0}
-.hero p{color:#cbd5e1}
-.panel{max-width:1000px;margin:auto;background:white;padding:25px;border-radius:20px;box-shadow:0 20px 40px #0005}
+*{box-sizing:border-box;font-family:"Trebuchet MS","Segoe UI",sans-serif}
+:root{--ink:#172033;--muted:#64748b;--surface:#fff;--line:#e2e8f0;--accent:#2563eb;--accent-soft:#eff6ff;--canvas:#f1f5f9}
+body{margin:0;background:var(--canvas);color:var(--ink)}
+.hero{background:#0f172a;text-align:center;color:white;padding:42px 20px 52px}
+.hero h1{font-size:clamp(30px,5vw,42px);letter-spacing:.2px;margin:0}
+.hero p{color:#cbd5e1;margin:10px auto 0;max-width:680px}
+.search-layout{max-width:1200px;margin:-25px auto 0;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;padding:0 20px;align-items:start}
+.panel{position:relative;background:var(--surface);padding:25px;border:1px solid var(--line);border-radius:18px;box-shadow:0 14px 32px #0f172a18}
 input,textarea,select{width:100%;padding:14px;margin:8px 0;border-radius:12px;border:1px solid #ddd;font-size:15px}
-button{padding:12px 18px;border:0;border-radius:10px;background:#2563eb;color:white;font-weight:bold;cursor:pointer;margin:5px 3px}
+button{padding:12px 18px;border:0;border-radius:10px;background:var(--accent);color:white;font-weight:bold;cursor:pointer;margin:5px 3px;transition:background .2s ease,transform .2s ease}
+button:hover:not(:disabled){background:#1d4ed8;transform:translateY(-1px)}
 button:disabled{background:#999;cursor:not-allowed}
-.container{max-width:1200px;margin:25px auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:20px;padding:0 20px}
-.card{background:white;padding:20px;border-radius:18px;box-shadow:0 10px 25px #0004}
-.card h3{margin-top:0;color:#0f172a}
+.page-grid{max-width:1200px;margin:25px auto 0;padding:0 20px}
+.info-card{height:max-content;background:var(--surface);padding:20px;border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 24px #0f172a12}
+.info-card h2{font-size:19px;margin:0 0 8px;color:var(--ink)}
+.info-card p{font-size:13px;line-height:1.55;color:var(--muted);margin:0 0 16px}
+.data-list{list-style:none;padding:0;margin:0 0 16px}
+.data-list li{font-size:13px;margin:9px 0;color:#334155}
+.data-list li::before{content:"✓";color:#16a34a;font-weight:bold;margin-right:8px}
+.results-section{min-width:0}
+.container{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px}
+.card{background:var(--surface);padding:20px;border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 24px #0f172a12}
+.card h3{margin-top:0;color:var(--ink)}
 .badge{display:inline-block;background:#fef3c7;color:#92400e;padding:6px 10px;border-radius:999px;font-weight:bold}
 .info{color:#475569;font-size:14px;line-height:1.6}
 .ok{color:#16a34a;font-weight:bold}
 .missing{color:#dc2626;font-weight:bold}
 a{color:#2563eb;font-weight:bold;text-decoration:none}
-.loading{text-align:center;color:white;font-size:18px;margin:20px}
+.loading-state{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:190px;margin-bottom:20px;background:var(--accent-soft);border:1px solid #bfdbfe;border-radius:16px;text-align:center;color:var(--ink)}
+.loading-state[hidden]{display:none}
+.skull{width:58px;height:58px;animation:skullFloat 1.8s ease-in-out infinite;filter:drop-shadow(0 7px 5px #1d4ed833)}
+.loading-title{font-weight:bold;margin-top:10px}
+.loading-copy{font-size:13px;color:var(--muted);margin-top:5px}
+.loading-status{text-align:center;color:var(--muted);font-size:14px;margin:20px 0}
+.loading-status:empty{display:none}
+.loading{text-align:center;color:var(--muted);font-size:16px;margin:20px}
+@keyframes skullFloat{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-7px) rotate(2deg)}}
 .small{font-size:13px;color:#64748b}
+@media (max-width:760px){.search-layout{grid-template-columns:1fr;margin:0;padding:0 16px}.panel{padding:18px}.page-grid{margin-top:20px;padding:0 16px}.hero{padding:32px 20px 35px}.container{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){.skull,button{animation:none;transition:none}}
 </style>
 </head>
 
@@ -33,11 +56,12 @@ a{color:#2563eb;font-weight:bold;text-decoration:none}
 <p>Find businesses, check website/social presence, and prepare WhatsApp outreach safely.</p>
 </div>
 
+<div class="search-layout">
 <div class="panel">
 <input id="search" placeholder="Example: restaurants in Islamabad">
 <input id="limit" type="number" min="1" max="60" value="30" placeholder="Max results (1-60)">
 
-<select id="filter">
+<select id="filter" aria-label="Filter businesses">
 <option value="all">All Businesses</option>
 <option value="noWebsite">No Website</option>
 <option value="hasWebsite">Website Available</option>
@@ -48,14 +72,40 @@ a{color:#2563eb;font-weight:bold;text-decoration:none}
 
 <textarea id="messageBox" rows="4" placeholder="Write your WhatsApp message here..."></textarea>
 
-<button onclick="searchPlaces()">Search Businesses</button>
+<button id="searchButton" onclick="searchPlaces()">Search Businesses</button>
 <button onclick="startOutreach()">Open WhatsApp Queue</button>
 
 <p class="small">Limit: 10 WhatsApp opens per hour. You must manually press Send in WhatsApp.</p>
 </div>
 
-<div id="loading" class="loading"></div>
-<div id="results" class="container"></div>
+    <aside class="info-card" aria-labelledby="data-collected-title">
+        <h2 id="data-collected-title">Data We Collect</h2>
+        <p>Search Google Maps businesses and collect useful business information in one place.</p>
+        <ul class="data-list">
+            <li>Business Name</li>
+            <li>Address</li>
+            <li>Phone Number</li>
+            <li>Website</li>
+            <li>Rating</li>
+            <li>Business Status</li>
+        </ul>
+        <p>Results are saved and displayed in the business table.</p>
+    </aside>
+</div>
+
+<div class="page-grid">
+    <main class="results-section">
+        <div id="loading" class="loading-state" hidden aria-live="polite">
+            <svg class="skull" viewBox="0 0 64 64" role="img" aria-label="Search in progress" xmlns="http://www.w3.org/2000/svg">
+                <path fill="#2563eb" d="M32 6C17.6 6 7 16.7 7 30.1c0 9.3 5.4 16.8 13.5 20.2V57c0 1.1.9 2 2 2h5v-7h9v7h5c1.1 0 2-.9 2-2v-6.7C51.6 46.9 57 39.4 57 30.1 57 16.7 46.4 6 32 6Zm-9 25a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm18 0a5 5 0 1 1 0-10 5 5 0 0 1 0 10ZM24 39h16v4H24v-4Z"/>
+            </svg>
+            <div class="loading-title">Searching for businesses...</div>
+            <div class="loading-copy">Please wait while we collect the results.</div>
+        </div>
+        <div id="loadingStatus" class="loading-status" role="status"></div>
+        <div id="results" class="container"></div>
+    </main>
+</div>
 
 <script>
 let allBusinesses = [];
@@ -63,6 +113,14 @@ let filteredBusinesses = [];
 
 let openedCount = Number(localStorage.getItem("openedCount")) || 0;
 let resetTime = Number(localStorage.getItem("resetTime")) || Date.now() + 3600000;
+
+function getApiBaseUrl() {
+    if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+        return "";
+    }
+
+    return "http://127.0.0.1:5000";
+}
 
 function checkLimitReset() {
     if (Date.now() > resetTime) {
@@ -86,6 +144,8 @@ async function searchPlaces() {
     const limitInput = document.getElementById("limit");
     const limit = Math.max(1, Math.min(60, Number(limitInput.value) || 30));
     const loading = document.getElementById("loading");
+    const loadingStatus = document.getElementById("loadingStatus");
+    const searchButton = document.getElementById("searchButton");
     const results = document.getElementById("results");
 
     if (!query) {
@@ -95,23 +155,33 @@ async function searchPlaces() {
 
     results.innerHTML = "";
     limitInput.value = limit;
-    loading.innerHTML = `Searching up to ${limit} businesses... please wait.`;
+    loading.hidden = false;
+    loadingStatus.textContent = "";
+    searchButton.disabled = true;
+    searchButton.textContent = "Searching...";
 
     try {
-    const res = await fetch(`/api/places/scrape?search=${encodeURIComponent(query)}&limit=${limit}`);
-    const data = await res.json();
+        const apiBaseUrl = getApiBaseUrl();
+        const res = await fetch(`${apiBaseUrl}/api/places/scrape?search=${encodeURIComponent(query)}&limit=${limit}`);
+        const data = await res.json();
         if (!res.ok) {
             throw new Error(data.message || data.error || "Error fetching data.");
         }
 
         allBusinesses = data.data || [];
-        loading.innerHTML = `Showing ${allBusinesses.length} result(s).`;
+        loadingStatus.textContent = `Showing ${allBusinesses.length} result(s).`;
         applyFilter();
 
     } catch (err) {
-        loading.innerHTML = "";
-        alert(err.message || "Error fetching data.");
+        loadingStatus.textContent = "";
+        alert(
+            `${err.message || "Error fetching data."}\n\nMake sure the backend is running at http://127.0.0.1:5000.`
+        );
         console.log(err);
+    } finally {
+        loading.hidden = true;
+        searchButton.disabled = false;
+        searchButton.textContent = "Search Businesses";
     }
 }
 

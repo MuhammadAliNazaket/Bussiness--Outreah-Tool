@@ -5,15 +5,16 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "mysql2": "^3.22.2",
-    "puppeteer": "^24.42.0"
+    "puppeteer": "^24.43.1"
   },
   "name": "project-gp",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
+    "postinstall": "puppeteer browsers install chrome",
+    "install:browser": "puppeteer browsers install chrome",
     "start": "node server.js",
-    "clear:businesses": "node scripts/clearBusinesses.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clear:businesses": "node scripts/clearBusinesses.js"
   },
   "keywords": [],
   "author": "",

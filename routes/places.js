@@ -4,10 +4,7 @@ const puppeteerController = require("../controllers/puppeteerController");
 const db = require("../db");
 
 router.get("/health", (req, res) => {
-    res.json({
-        ok: true,
-        message: "Places route working"
-    });
+    res.json({ status: "ok" });
 });
 
 router.get("/scrape", puppeteerController.scrapePlaces);

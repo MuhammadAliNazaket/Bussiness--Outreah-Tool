@@ -1,5 +1,10 @@
 node_modules/
 .env
 .vscode/
+*.log
 server.err.log
 server.out.log
+coverage/
+dist/
+build/
+.cache/

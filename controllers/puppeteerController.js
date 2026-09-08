@@ -35,6 +35,23 @@ async function prepareMapsPage(page) {
     });
 }
 
+async function gotoWithRetry(page, url, options, retries = 2) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            return await page.goto(url, options);
+        } catch (err) {
+            const canRetry =
+                /Navigating frame was detached|net::ERR_ABORTED/i.test(err.message || "");
+
+            if (!canRetry || attempt === retries) {
+                throw err;
+            }
+
+            await sleep(1000 * (attempt + 1));
+        }
+    }
+}
+
 async function fetchTextSearchPage(search, pageToken, pageSize) {
     const body = {
         textQuery: search,
@@ -90,7 +107,8 @@ async function fetchPlaces(search, maxResults) {
 
 async function collectMapsPlaceUrls(page, search, maxResults) {
     await prepareMapsPage(page);
-    await page.goto(
+    await gotoWithRetry(
+        page,
         `https://www.google.com/maps/search/${encodeURIComponent(search)}`,
         { waitUntil: "domcontentloaded", timeout: 60000 }
     );
@@ -139,7 +157,10 @@ async function extractMapsPlace(browser, url) {
     await prepareMapsPage(page);
 
     try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+        await gotoWithRetry(page, url, {
+            waitUntil: "domcontentloaded",
+            timeout: 60000
+        });
         await page.waitForSelector("h1", { timeout: 15000 });
         await sleep(1800);
 
@@ -186,19 +207,23 @@ async function extractMapsPlace(browser, url) {
 }
 
 async function scrapeMapsHeadless(search, maxResults) {
-    console.log("Launching Puppeteer with Railway-safe no-sandbox args");
+    console.log("Launching Puppeteer with VPS-safe no-sandbox args");
 
-    const browser = await puppeteer.launch({
+    const launchOptions = {
         headless: "new",
         args: [
             "--no-sandbox",
             "--disable-setuid-sandbox",
             "--disable-dev-shm-usage",
-            "--disable-gpu",
-            "--single-process",
-            "--no-zygote"
+            "--disable-gpu"
         ]
-    });
+    };
+
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+
+    const browser = await puppeteer.launch(launchOptions);
     try {
         const searchPage = await browser.newPage();
         const urls = await collectMapsPlaceUrls(searchPage, search, maxResults);
